@@ -8,10 +8,13 @@ import lxml.etree as ET
 import os
 from sys import exit
 
+from copy import deepcopy
+
 url = os.environ.get('MANIFEST_URL')
 # [{'xpath': <xpath>,
 #   'attrib': <attrib to change>,
-#   'newvalue': <newvalue for attrib @ xpath>}]
+#   'newvalue': <newvalue for attrib @ xpath>,
+#    'action': <action>}]
 filter_json = json.loads(os.environ.get('FILTER_JSON'))
 
 
@@ -31,10 +34,24 @@ def get_manifest(url):
 def respond_with_manifest(url = url):
     xmlr, headers = get_manifest(url)
     for fjson in filter_json:
-        xpath = fjson['xpath']
-        attrib = fjson['attrib']
-        newvalue = fjson['newvalue']
-        xmlr.xpath(xpath)[0].attrib[attrib] = newvalue
+        action = fjson.get('action', 'edit')
+        xpath = fjson.get('xpath')
+        attrib = fjson.get('attrib')
+        newvalue = fjson.get('newvalue')
+        if action == 'edit':
+            xmlr.xpath(xpath)[0].attrib[attrib] = newvalue
+        elif action == 'sendtoback':
+            element = xmlr.xpath(xpath)[0] 
+            element_copy = deepcopy(element)
+            parent = element.getparent()
+            parent.remove(element)
+            parent.append(element_copy)
+        elif action == 'sendtofront':
+            element = xmlr.xpath(xpath)[0] 
+            element_copy = deepcopy(element)
+            parent = element.getparent()
+            parent.remove(element)
+            parent.insert(0, element_copy)
     return ET.tostring(xmlr), 200, headers
 
 if __name__ == '__main__':
