@@ -1,1 +1,1 @@
-web: gunicorn yousirs:app
+web: gunicorn manifest:app
