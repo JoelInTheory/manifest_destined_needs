@@ -23,19 +23,19 @@ api = Api(app)
 
 def get_manifest(url):
     r = requests.get(url)
+    headers = r.headers.items()
     xmlr = ET.fromstring(r.content)
-    return xmlr     
+    return xmlr, headers
 
-@api.representation('text/html')
 @app.route("/manifest.xml", methods=["GET"])
 def respond_with_manifest(url = url):
-    xmlr = get_manifest(url)
+    xmlr, headers = get_manifest(url)
     for fjson in filter_json:
         xpath = fjson['xpath']
         attrib = fjson['attrib']
         newvalue = fjson['newvalue']
         xmlr.xpath(xpath)[0].attrib[attrib] = newvalue
-    return ET.tostring(xmlr), 200
+    return ET.tostring(xmlr), 200, headers
 
 if __name__ == '__main__':
     x = ManApp()
